@@ -1,11 +1,8 @@
 package com.example.albertocole.myapplication;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
-import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
@@ -20,17 +17,62 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.hardware.Camera;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.pubnub.api.Callback;
+import com.pubnub.api.Pubnub;
+import com.pubnub.api.PubnubError;
+
+import org.json.*;
 
 public class MainActivity extends AppCompatActivity {
     private Camera mCamera;
+    private Pubnub nPubNub;
+    private Callback sendPictureCallback;
+
+    public void sendPictureData (byte[] data) {
+
+        // 32kb is the max size allowed for PubNub
+        List<byte[]> imageChunks = divideArray(data, 16 * 1000);
+
+        for(int i = 0; i < imageChunks.size(); i++) {
+            nPubNub.publish("camguard:sendPicture", Base64.encodeToString(imageChunks.get(i), Base64.DEFAULT) , sendPictureCallback);
+        }
+    }
+
+    public static List<byte[]> divideArray(byte[] source, int chunksize) {
+
+        List<byte[]> result = new ArrayList<byte[]>();
+        int start = 0;
+        while (start < source.length) {
+            int end = Math.min(source.length, start + chunksize);
+            result.add(Arrays.copyOfRange(source, start, end));
+            start += chunksize;
+        }
+
+        return result;
+    }
+
+    private void setupPubNub () {
+        Log.i(getString(R.string.app_name), "SETTING UP PUBNUB");
+        nPubNub = new Pubnub("pub-c-53c4cd7d-bc10-46c6-842b-36d270ea44f7", "sub-c-0483cd26-04fc-11e6-bbd9-02ee2ddab7fe", "sec-c-NDM5ZGZkZTMtMDU2Mi00MGQyLWFmZGEtNzdmOGQyODM5ZmU1");
+        sendPictureCallback = new Callback() {
+            public void successCallback(String channel, Object response) {
+                Log.i(getString(R.string.app_name), response.toString());
+            }
+            public void errorCallback(String channel, PubnubError error) {
+                Log.e(getString(R.string.app_name), error.toString());
+            }
+        };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        setupPubNub();
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -47,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         Context mContext = getApplicationContext();
 
         try {
+            System.out.println("SETTING UP CAMERA");
             mCamera = Camera.open();
             Camera.Parameters parameters = mCamera.getParameters();
             List<Integer> formats = parameters.getSupportedPictureFormats();
@@ -58,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
             }
             List<Camera.Size> sizes = parameters.getSupportedPictureSizes();
             System.out.println(sizes);
-            Camera.Size size = sizes.get(0);
+            Camera.Size size = sizes.get(sizes.size() - 1);
             // Print the name from the list....
             for(Camera.Size sizee : sizes) {
                 System.out.println(sizee.width);
@@ -69,17 +112,13 @@ public class MainActivity extends AppCompatActivity {
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
             parameters.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-
             SurfaceView view = new SurfaceView(mContext);
             android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(size.width, size.height);
             view.setLayoutParams(params);
-            Log.i(getString(R.string.app_name), view.getHeight() + "");
-            Log.i(getString(R.string.app_name), view.getWidth() + "");
             mCamera.setPreviewDisplay(view.getHolder());
             mCamera.setParameters(parameters);
             mCamera.startPreview();
-
-
+            System.out.println("CAMERA READY");
         } catch  (Exception e) {
             Log.e(getString(R.string.app_name), "failed to open Camera");
             e.printStackTrace();
@@ -95,34 +134,32 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        mCamera.takePicture(null, null, new Camera.PictureCallback() {
+            public void onPictureTaken(byte[] data, Camera camera) {
+                sendPictureData(data);
+                //mCamera.stopPreview();
+                //mCamera.release();
+            }
+        });
         final Handler handler = new Handler();
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 try{
-                    System.out.println(1);
+                    /* System.out.println("TAKING");
                     Thread.sleep(1000);
-                    System.out.println(2);
+                    System.out.println("PICTURE");
+
                     mCamera.takePicture(null, null, new Camera.PictureCallback() {
                         public void onPictureTaken(byte[] data, Camera camera) {
-                            System.out.println(data.length);
+                            sendPictureData(data);
                             //mCamera.stopPreview();
                             //mCamera.release();
-                /* BitmapFactory.Options bfo = new BitmapFactory.Options();
-                bfo.inPreferredConfig = Bitmap.Config.RGB_565;
-                Bitmap bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(data), null, bfo);
-                System.out.println(5);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.PNG,100,baos);
-                byte[] b = baos.toByteArray();
-                System.out.println(6);
-                String encImage = Base64.encodeToString(b, Base64.DEFAULT);
-                System.out.println(7); */
                         }
-                    });
+                    }); */
                 }
                 catch (Exception e) {
-                    Log.d(getString(R.string.app_name), Log.getStackTraceString(e));
+                    Log.e(getString(R.string.app_name), Log.getStackTraceString(e));
                 }
                 finally{
                     //also call the same runnable to call it at regular interval
@@ -141,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
