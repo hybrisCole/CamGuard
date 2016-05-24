@@ -82,11 +82,10 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println(sizee.height);
             }
             parameters.setPictureSize(size.width, size.height);
-            parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
+            parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_CLOUDY_DAYLIGHT);
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-            parameters.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-            parameters.setRotation(90);
+            parameters.setSceneMode(Camera.Parameters.SCENE_MODE_LANDSCAPE);
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             SurfaceView view = new SurfaceView(mContext);
             android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(size.width, size.height);
             view.setLayoutParams(params);
@@ -131,11 +130,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 finally{
                     //also call the same runnable to call it at regular interval
-                    handler.postDelayed(this, 15000);
+                    handler.postDelayed(this, 1000);
                 }
             }
         };
-        handler.postDelayed(runnable, 15000);
+        handler.postDelayed(runnable, 1000);
 
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
