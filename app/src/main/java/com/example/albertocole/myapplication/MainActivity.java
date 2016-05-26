@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
             List<Integer> formats = parameters.getSupportedPictureFormats();
             if (formats.contains(ImageFormat.JPEG)) {
                 parameters.setPictureFormat(ImageFormat.JPEG);
-                parameters.setJpegQuality(100);
+                parameters.setJpegQuality(60);
             } else {
                 parameters.setPictureFormat(PixelFormat.RGB_565);
             }
@@ -82,9 +82,9 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println(sizee.height);
             }
             parameters.setPictureSize(size.width, size.height);
-            parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_CLOUDY_DAYLIGHT);
+            parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_DAYLIGHT);
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-            parameters.setSceneMode(Camera.Parameters.SCENE_MODE_LANDSCAPE);
+            parameters.setSceneMode(Camera.Parameters.SCENE_MODE_ACTION);
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             SurfaceView view = new SurfaceView(mContext);
             android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(size.width, size.height);
@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try{
                     System.out.println("TAKING");
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                     System.out.println("PICTURE");
 
                     mCamera.takePicture(null, null, new Camera.PictureCallback() {
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 finally{
                     //also call the same runnable to call it at regular interval
-                    handler.postDelayed(this, 1000);
+                    handler.postDelayed(this, 500);
                 }
             }
         };
